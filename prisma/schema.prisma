@@ -1,0 +1,214 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  emailVerified  DateTime?
+  hashedPassword String?
+  image          String?
+  role           String    @default("USER")
+  bio            String?
+  reputation     Int       @default(0)
+  ratings        Rating[]
+  reviews        Review[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Movie {
+  id               String          @id @default(cuid())
+  title            String
+  titleGurmukhi    String?
+  slug             String          @unique
+  year             Int
+  releaseDate      DateTime?
+  runtime          Int?
+  synopsis         String?
+  posterUrl        String?
+  trailerYoutubeId String?
+  averageRating    Float           @default(0)
+  ratingCount      Int             @default(0)
+  language         String          @default("PUNJABI")
+  status           String          @default("RELEASED")
+  boxOffice        String?
+  credits          Credit[]
+  genres           MovieGenre[]
+  videos           Video[]
+  ratings          Rating[]
+  reviews          Review[]
+  streamingLinks   StreamingLink[]
+  metaDescription  String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([year])
+  @@index([averageRating])
+  @@index([slug])
+}
+
+model Song {
+  id                  String       @id @default(cuid())
+  title               String
+  titleGurmukhi       String?
+  slug                String       @unique
+  year                Int
+  releaseDate         DateTime?
+  duration            Int?
+  album               String?
+  musicVideoYoutubeId String?
+  spotifyUrl          String?
+  averageRating       Float        @default(0)
+  ratingCount         Int          @default(0)
+  label               String?
+  genre               String       @default("POP")
+  credits             SongCredit[]
+  videos              Video[]
+  ratings             Rating[]
+  reviews             Review[]
+  metaDescription     String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@index([year])
+  @@index([averageRating])
+  @@index([slug])
+}
+
+model Artist {
+  id              String          @id @default(cuid())
+  name            String
+  nameGurmukhi    String?
+  slug            String          @unique
+  bio             String?
+  photoUrl        String?
+  bannerUrl       String?
+  birthDate       DateTime?
+  birthPlace      String?
+  deathDate       DateTime?
+  totalMovies     Int             @default(0)
+  totalSongs      Int             @default(0)
+  averageRating   Float           @default(0)
+  verified        Boolean         @default(false)
+  featured        Boolean         @default(false)
+  type            String          @default("MULTI")
+  movieCredits    Credit[]
+  songCredits     SongCredit[]
+  socialAccounts  SocialAccount[]
+  videos          Video[]
+  metaDescription String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([type])
+  @@index([slug])
+  @@index([featured])
+}
+
+model Credit {
+  id        String  @id @default(cuid())
+  movie     Movie   @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId   String
+  artist    Artist  @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  artistId  String
+  role      String
+  character String?
+  order     Int     @default(0)
+
+  @@unique([movieId, artistId, role])
+}
+
+model SongCredit {
+  id       String @id @default(cuid())
+  song     Song   @relation(fields: [songId], references: [id], onDelete: Cascade)
+  songId   String
+  artist   Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  artistId String
+  role     String
+
+  @@unique([songId, artistId, role])
+}
+
+model SocialAccount {
+  id        String @id @default(cuid())
+  platform  String
+  url       String
+  followers Int?
+  artist    Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  artistId  String
+
+  @@unique([artistId, platform])
+}
+
+model Video {
+  id        String   @id @default(cuid())
+  title     String
+  youtubeId String
+  type      String
+  thumbnail String?
+  order     Int      @default(0)
+  featured  Boolean  @default(false)
+  movieId   String?
+  movie     Movie?   @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  songId    String?
+  song      Song?    @relation(fields: [songId], references: [id], onDelete: Cascade)
+  artistId  String?
+  artist    Artist?  @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model StreamingLink {
+  id       String @id @default(cuid())
+  platform String
+  url      String
+  movie    Movie  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId  String
+
+  @@unique([movieId, platform])
+}
+
+model MovieGenre {
+  id      String @id @default(cuid())
+  genre   String
+  movie   Movie  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId String
+
+  @@unique([movieId, genre])
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  score     Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  movie     Movie?   @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId   String?
+  song      Song?    @relation(fields: [songId], references: [id], onDelete: Cascade)
+  songId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, movieId])
+  @@unique([userId, songId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  text      String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  movie     Movie?   @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId   String?
+  song      Song?    @relation(fields: [songId], references: [id], onDelete: Cascade)
+  songId    String?
+  approved  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
